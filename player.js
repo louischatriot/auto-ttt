@@ -1,7 +1,6 @@
 var N = 3
   , players = { SELF: 0, OPPONENT: 1, ROOT: 2 }
-  //, possibleMoves = ['00', '01', '02', '10', '11', '12', '20', '21', '22']
-  , scores = { UNKNOWN: 0.5, DRAW: 0.25, LOSE: 0, WIN: 1 }
+  , scores = { UNKNOWN: 0.5, DRAW: 0.25, LOSE: 0, WIN: 1 }   // Duplication with arbiter.js but I don't want to externalize this just yet
   ;
 
 function Node(player, parent) {
@@ -9,7 +8,6 @@ function Node(player, parent) {
   this.player = player;
   this.children = {};
   this.parent = parent;
-
 }
 
 
@@ -17,9 +15,6 @@ function Node(player, parent) {
 function Player () {
   this.decisionTree = new Node(players.ROOT);
   this.currentNode = this.decisionTree;   // No game started
-  
-
-
 }
 
 
@@ -70,6 +65,31 @@ Player.prototype.opponentPlayed = function (move) {
 };
 
 
+/*
+ * Updates the AI that the game is finished and give result
+ * Result bubbles up using minimax algorithm
+ */
+Player.prototype.result = function (score) {
+  var s;
+
+  this.currentNode.score = score;
+
+  while (this.currentNode.parent) {
+    this.currentNode = this.currentNode.parent;
+    s = scores.UNKNOWN;
+    
+    // Could be factored a bit but I prefer this semantic
+    if (this.currentNode.player === players.SELF) {
+      this.currentNode.children.forEach(function (child) {
+        s = Math.min(s, child.score);
+      });
+    } else {
+      this.currentNode.children.forEach(function (child) {
+        s = Math.max(s, child.score);
+      });
+    }
+  }
+};
 
 
 // Interface
