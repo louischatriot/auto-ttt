@@ -1,6 +1,6 @@
-var N = 3
-  , players = { SELF: 0, OPPONENT: 1, ROOT: 2 }
+var players = { SELF: 0, OPPONENT: 1, ROOT: 2 }
   , scores = { UNKNOWN: 0.5, DRAW: 0.25, LOSE: 0, WIN: 1 }   // Duplication with arbiter.js but I don't want to externalize this just yet
+                                                             // DRAW is ranked less than UNKNOWN are there may be untested winning moves
   ;
 
 function Node(player, parent) {
