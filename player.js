@@ -39,7 +39,7 @@ Player.prototype.play = function (validMoves) {
     // Of course that means some nodes will never be explored but the AI will always play optimally
     // The >= sign guarantees one node will always be chosen
     if (score >= maxScore) {
-      maxScore = self.currentNode.children[move].score;
+      maxScore = score;
       maxMove = move;
     }
   });
@@ -70,7 +70,7 @@ Player.prototype.opponentPlayed = function (move) {
  * Result bubbles up using minimax algorithm
  */
 Player.prototype.result = function (score) {
-  var s;
+  var s, self = this;
 
   this.currentNode.score = score;
 
@@ -79,15 +79,18 @@ Player.prototype.result = function (score) {
     s = scores.UNKNOWN;
     
     // Could be factored a bit but I prefer this semantic
+    // TODO: should probably just exclude the UNKNOWN states from minimax
     if (this.currentNode.player === players.SELF) {
-      this.currentNode.children.forEach(function (child) {
-        s = Math.min(s, child.score);
+      Object.keys(this.currentNode.children).forEach(function (move) {
+        s = Math.min(s, self.currentNode.children[move].score);
       });
     } else {
-      this.currentNode.children.forEach(function (child) {
-        s = Math.max(s, child.score);
+      Object.keys(this.currentNode.children).forEach(function (move) {
+        s = Math.max(s, self.currentNode.children[move].score);
       });
     }
+
+    this.currentNode.score = s;
   }
 };
 

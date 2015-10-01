@@ -3,6 +3,7 @@ var autoPlayer = './player'
   , player2 = process.argv[3] || autoPlayer
   , scores = { UNKNOWN: 0.5, DRAW: 0.25, LOSE: 0, WIN: 1 }   // Duplication with player.js but I don't want to externalize this just yet
   , gridSymbols = { EMPTY: ' ', PLAYER1: 'X', PLAYER2: 'O' }
+  , results = { PLAYER1_WIN: 0, PLAYER2_WIN: 1, DRAW: 2, NONE: 3 }
   , currentGame = []
   , N = 3
   ;
@@ -44,13 +45,108 @@ function drawGrid(grid) {
 }
 
 
-function runOneGame () {
-  var grid = createNewGrid();
+function getLegalMoves (grid) {
+  var res = [];
 
-  drawGrid(grid);
+  for (var i = 0; i < N; i += 1) {
+    for (var j = 0; j < N; j += 1) {
+      if (grid[i][j] === gridSymbols.EMPTY) { res.push('' + i + '-' + j); }
+    }
+  }
+
+  return res;
+}
+
+
+function checkResult(grid) {
+  var l1, l2, c1, c2;
+
+  var d1 = true, d2 = true, d1i = true, d2i = true;
+
+  for (var i = 0; i < N; i += 1) {
+    l1 = true; l2 = true; c1 = true; c2 = true;
+    for (var j = 0; j < N; j += 1) {
+      l1 = l1 && (grid[i][j] === gridSymbols.PLAYER1);
+      l2 = l2 && (grid[i][j] === gridSymbols.PLAYER2);
+      c1 = c1 && (grid[j][i] === gridSymbols.PLAYER1);
+      c2 = c2 && (grid[j][i] === gridSymbols.PLAYER2);
+    }
+
+    if (l1 || c1) { return results.PLAYER1_WIN; }
+    if (l2 || c2) { return results.PLAYER2_WIN; }
+
+    d1 = d1 && (grid[i][i] === gridSymbols.PLAYER1);
+    d2 = d2 && (grid[i][i] === gridSymbols.PLAYER2);
+    
+    d1i = d1i && (grid[i][N - 1 - i] === gridSymbols.PLAYER1);
+    d2i = d2i && (grid[i][N - 1 - i] === gridSymbols.PLAYER2);
+  }
+
+  if (d1 || d1i) { return results.PLAYER1_WIN; }
+  if (d2 || d2i) { return results.PLAYER2_WIN; }
+
+  if (getLegalMoves(grid).length === 0) {
+    return results.DRAW;
+  } else {
+    return results.NONE;
+  }
+}
+
+
+function runOneGame (drawBoard) {
+  var grid = createNewGrid()
+    , move, i, j
+    ;
+
+
+  //if (drawBoard) { console.log('======================================================'); drawGrid(grid); }
+
+  while (true) {
+    move = player1.play(getLegalMoves(grid));
+    i = parseInt(move.split('-')[0], 10);
+    j = parseInt(move.split('-')[1], 10);
+    grid[i][j] = gridSymbols.PLAYER1;
+    player2.opponentPlayed(move);
+
+    //if (drawBoard) { console.log('======================================================'); drawGrid(grid); }
+    if (checkResult(grid) !== results.NONE) { break; }
+
+
+
+    move = player2.play(getLegalMoves(grid));
+    i = parseInt(move.split('-')[0], 10);
+    j = parseInt(move.split('-')[1], 10);
+    grid[i][j] = gridSymbols.PLAYER2;
+    player1.opponentPlayed(move);
+
+    //if (drawBoard) { console.log('======================================================'); drawGrid(grid); }
+    if (checkResult(grid) !== results.NONE) { break; }
+  } 
+
+  console.log('RESULT: ' + checkResult(grid));
+
+  switch (checkResult(grid)) {
+    case results.PLAYER1_WIN:
+      player1.result(scores.WIN);
+      player2.result(scores.LOSE);
+      break;
+    case results.PLAYER2_WIN:
+      player2.result(scores.WIN);
+      player1.result(scores.LOSE);
+      break;
+    case results.DRAW:
+      player1.result(scores.DRAW);
+      player2.result(scores.DRAW);
+      break;
+  }
+
+  if (drawBoard) { console.log('======================================================'); drawGrid(grid); }
 
 }
 
-console.log('=========================');
-runOneGame();
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
 
