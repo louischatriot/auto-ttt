@@ -3,7 +3,7 @@ var autoPlayer = './player'
   , player2 = process.argv[3] || autoPlayer
   , scores = { UNKNOWN: 0.5, DRAW: 0.25, LOSE: 0, WIN: 1 }   // Duplication with player.js but I don't want to externalize this just yet
   , gridSymbols = { EMPTY: ' ', PLAYER1: 'X', PLAYER2: 'O' }
-  , results = { PLAYER1_WIN: 0, PLAYER2_WIN: 1, DRAW: 2, NONE: 3 }
+  , results = { PLAYER1_WIN: 'Player 1 wins', PLAYER2_WIN: 'Player 2 wins', DRAW: 'Draw', NONE: 'No result yet' }
   , currentGame = []
   , N = 3
   ;
@@ -123,7 +123,9 @@ function runOneGame (drawBoard) {
     if (checkResult(grid) !== results.NONE) { break; }
   } 
 
+  if (drawBoard) { console.log('======================================================'); drawGrid(grid); }
   console.log('RESULT: ' + checkResult(grid));
+  player1.drawTree();
 
   switch (checkResult(grid)) {
     case results.PLAYER1_WIN:
@@ -140,7 +142,7 @@ function runOneGame (drawBoard) {
       break;
   }
 
-  if (drawBoard) { console.log('======================================================'); drawGrid(grid); }
+  player1.drawTree();
 
 }
 

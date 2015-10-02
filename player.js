@@ -1,5 +1,5 @@
 var players = { SELF: 0, OPPONENT: 1, ROOT: 2 }
-  , scores = { UNKNOWN: 0.5, DRAW: 0.25, LOSE: 0, WIN: 1 }   // Duplication with arbiter.js but I don't want to externalize this just yet
+  , scores = { UNKNOWN: 2, DRAW: 0.25, LOSE: 0, WIN: 1 }   // Duplication with arbiter.js but I don't want to externalize this just yet
                                                              // DRAW is ranked less than UNKNOWN are there may be untested winning moves
   ;
 
@@ -10,6 +10,56 @@ function Node(player, parent) {
   this.parent = parent;
 }
 
+
+/*
+ * Return the list of explored moves for this node
+ */
+Node.prototype.moves = function () {
+  return Object.keys(this.children);
+};
+
+
+/**
+ * Return number of nodes with the given score, or all if no parameter given
+ */
+Node.prototype.nodeCount = function (score) {
+  var self = this
+    , res = (score === undefined || this.score === score) ? 1 : 0
+    ;
+
+  //if (score === undefined || this.score === score) {
+    //res = 1;
+  //} else {
+    //res = 0;
+  //}
+
+  if (this.moves().length === 0) { return res; }
+
+  this.moves().forEach(function (move) {
+    res += self.children[move].nodeCount(score);
+  });
+
+  return res;
+};
+
+
+/*
+ * Draw the tree originating from this node, with offset spaces every level
+ */
+Node.prototype.drawDescendants = function (offset) {
+  var self = this;
+
+  this.moves().forEach(function (move) {
+    console.log(offset + move + '(score: ' + self.children[move].score + ')');
+    self.children[move].drawDescendants(offset + '  ');
+  });
+};
+
+
+Node.prototype.draw = function () {
+  console.log("ROOT (score: " + this.score + ')');
+  this.drawDescendants('');
+};
 
 
 function Player () {
@@ -65,6 +115,12 @@ Player.prototype.opponentPlayed = function (move) {
 };
 
 
+Player.prototype.drawTree = function () {
+  console.log("===== " + this.decisionTree.nodeCount() + ' nodes - U: ' + this.decisionTree.nodeCount(scores.UNKNOWN) + ' - W: ' + this.decisionTree.nodeCount(scores.WIN) + ' - L: ' + this.decisionTree.nodeCount(scores.LOSE) + ' - D: ' + this.decisionTree.nodeCount(scores.DRAW));
+  this.decisionTree.draw();
+};
+
+
 /*
  * Updates the AI that the game is finished and give result
  * Result bubbles up using minimax algorithm
@@ -82,8 +138,14 @@ Player.prototype.result = function (score) {
     // TODO: should probably just exclude the UNKNOWN states from minimax
     if (this.currentNode.player === players.SELF) {
       Object.keys(this.currentNode.children).forEach(function (move) {
+        // ...
+        // Should be able to code it more cleanly but for now we want to keep exploring nodes fully
+        if (self.currentNode.children[move].score === scores.UNKNOWN) { s = -1; }
+
         s = Math.min(s, self.currentNode.children[move].score);
       });
+
+      if (s === -1) { s = 2; }
     } else {
       Object.keys(this.currentNode.children).forEach(function (move) {
         s = Math.max(s, self.currentNode.children[move].score);
