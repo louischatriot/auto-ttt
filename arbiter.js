@@ -93,6 +93,9 @@ function checkResult(grid) {
 }
 
 
+/*
+ * Run one game between 2 AIs/human players
+ */
 function runOneGame (debug) {
   var grid = createNewGrid()
     , move, i, j
@@ -103,25 +106,21 @@ function runOneGame (debug) {
   // TODO: factor
   while (true) {
     move = player1.play(getLegalMoves(grid));
+    player2.opponentPlayed(move, getLegalMoves(grid));
     if (debug) { console.log("Player 1 plays " + move); }
     i = parseInt(move.split('-')[0], 10);
     j = parseInt(move.split('-')[1], 10);
     grid[i][j] = gridSymbols.PLAYER1;
-    player2.opponentPlayed(move);
     if (checkResult(grid) !== results.NONE) { break; }
 
     move = player2.play(getLegalMoves(grid));
+    player1.opponentPlayed(move, getLegalMoves(grid));
     if (debug) { console.log("Player 2 plays " + move); }
     i = parseInt(move.split('-')[0], 10);
     j = parseInt(move.split('-')[1], 10);
     grid[i][j] = gridSymbols.PLAYER2;
-    player1.opponentPlayed(move);
     if (checkResult(grid) !== results.NONE) { break; }
   } 
-
-  if (debug) { drawGrid(grid); }
-  console.log('RESULT: ' + checkResult(grid));
-  player1.drawTree();
 
   switch (checkResult(grid)) {
     case results.PLAYER1_WIN:
@@ -138,25 +137,39 @@ function runOneGame (debug) {
       break;
   }
 
-  player1.drawTree();
+  if (debug) { drawGrid(grid); }
+  if (debug) { console.log('RESULT: ' + checkResult(grid)) };
+  if (debug) { player1.drawTree(); }
 
+  return grid;
 }
 
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
-runOneGame(true);
+
+
+
+
+
+// ===== MANUAL TESTING
+
+// Learning phase.
+// At least one node is created at every game as this AI wants to explore unknown moves the most
+// 362880 is 9!, upper bound for the number of 3x3 games of tic tac toe regardless of the rules
+// So after 362880 the 3x3 AI is perfect
+for (var z = 0; z < 362880; z += 1) {
+  runOneGame();
+}
+
+// Test that we now only get draws for AI vs AI: the AI learned how to play tic tac toe
+var dc = 0, g;
+for (var z = 0; z < 100000; z += 1) {
+  g = runOneGame();
+  if (checkResult(g) === results.DRAW) { dc += 1; }
+}
+
+if (dc === 100000) {
+  console.log("100,000 draws in a row, both AIs play perfectly");
+} else {
+  console.log(dc + " draws, the code needs to be checked");
+}
+
 

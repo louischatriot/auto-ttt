@@ -1,13 +1,14 @@
-var players = { SELF: 0, OPPONENT: 1, ROOT: 2 }
+var players = { SELF: 'self', OPPONENT: 'opponent', ROOT: 'root' }
   , scores = { UNKNOWN: 2, DRAW: 0.25, LOSE: 0, WIN: 1 }   // Duplication with arbiter.js but I don't want to externalize this just yet
                                                              // DRAW is ranked less than UNKNOWN are there may be untested winning moves
   ;
 
-function Node(player, parent) {
+function Node(player, parent, height) {
   this.score = scores.UNKNOWN;
   this.player = player;
   this.children = {};
   this.parent = parent;
+  this.height = height;   // Number of possible moves from this node
 }
 
 
@@ -27,12 +28,6 @@ Node.prototype.nodeCount = function (score) {
     , res = (score === undefined || this.score === score) ? 1 : 0
     ;
 
-  //if (score === undefined || this.score === score) {
-    //res = 1;
-  //} else {
-    //res = 0;
-  //}
-
   if (this.moves().length === 0) { return res; }
 
   this.moves().forEach(function (move) {
@@ -50,7 +45,7 @@ Node.prototype.drawDescendants = function (offset) {
   var self = this;
 
   this.moves().forEach(function (move) {
-    console.log(offset + move + '(score: ' + self.children[move].score + ')');
+    console.log(offset + move + ' (' + self.children[move].player + ' - score: ' + self.children[move].score + ' - height: ' + self.children[move].height + ')');
     self.children[move].drawDescendants(offset + '  ');
   });
 };
@@ -96,7 +91,7 @@ Player.prototype.play = function (validMoves) {
 
   // Move to the node corresponding to the chosen move, lazily create it if it doesn't exist
   if (self.currentNode.children[maxMove] === undefined) {
-    self.currentNode.children[maxMove] = new Node(players.SELF, self.currentNode);
+    self.currentNode.children[maxMove] = new Node(players.SELF, self.currentNode, validMoves.length - 1);
   }
   self.currentNode = self.currentNode.children[maxMove];
 
@@ -107,9 +102,9 @@ Player.prototype.play = function (validMoves) {
 /*
  * Update state when opponent has played, lazily creating the corresponding node if it doesn't exist
  */
-Player.prototype.opponentPlayed = function (move) {
+Player.prototype.opponentPlayed = function (move, validMoves) {
   if (this.currentNode.children[move] === undefined) {
-    this.currentNode.children[move] = new Node(players.OPPONENT, this.currentNode);
+    this.currentNode.children[move] = new Node(players.OPPONENT, this.currentNode, validMoves.length - 1);
   }
   this.currentNode = this.currentNode.children[move];
 };
@@ -133,23 +128,26 @@ Player.prototype.result = function (score) {
   while (this.currentNode.parent) {
     this.currentNode = this.currentNode.parent;
     s = scores.UNKNOWN;
-    
+
     // Could be factored a bit but I prefer this semantic
-    // TODO: should probably just exclude the UNKNOWN states from minimax
     if (this.currentNode.player === players.SELF) {
-      Object.keys(this.currentNode.children).forEach(function (move) {
-        // ...
-        // Should be able to code it more cleanly but for now we want to keep exploring nodes fully
-        if (self.currentNode.children[move].score === scores.UNKNOWN) { s = -1; }
-
-        s = Math.min(s, self.currentNode.children[move].score);
-      });
-
-      if (s === -1) { s = 2; }
+        if (this.currentNode.moves().length === this.currentNode.height) {
+          s = scores.WIN;
+          Object.keys(this.currentNode.children).forEach(function (move) {
+            s = Math.min(s, self.currentNode.children[move].score);
+          });
+        } else {
+          s = scores.UNKNOWN;
+        }
     } else {
-      Object.keys(this.currentNode.children).forEach(function (move) {
-        s = Math.max(s, self.currentNode.children[move].score);
-      });
+      if (this.currentNode.moves().length === this.currentNode.height) {
+        s = scores.LOSE;
+        Object.keys(this.currentNode.children).forEach(function (move) {
+          s = Math.max(s, self.currentNode.children[move].score);
+        });
+      } else {
+        s = scores.UNKNOWN;
+      }
     }
 
     this.currentNode.score = s;
