@@ -93,37 +93,33 @@ function checkResult(grid) {
 }
 
 
-function runOneGame (drawBoard) {
+function runOneGame (debug) {
   var grid = createNewGrid()
     , move, i, j
     ;
 
+  if (debug) { console.log("=============================================================="); }
 
-  //if (drawBoard) { console.log('======================================================'); drawGrid(grid); }
-
+  // TODO: factor
   while (true) {
     move = player1.play(getLegalMoves(grid));
+    if (debug) { console.log("Player 1 plays " + move); }
     i = parseInt(move.split('-')[0], 10);
     j = parseInt(move.split('-')[1], 10);
     grid[i][j] = gridSymbols.PLAYER1;
     player2.opponentPlayed(move);
-
-    //if (drawBoard) { console.log('======================================================'); drawGrid(grid); }
     if (checkResult(grid) !== results.NONE) { break; }
 
-
-
     move = player2.play(getLegalMoves(grid));
+    if (debug) { console.log("Player 2 plays " + move); }
     i = parseInt(move.split('-')[0], 10);
     j = parseInt(move.split('-')[1], 10);
     grid[i][j] = gridSymbols.PLAYER2;
     player1.opponentPlayed(move);
-
-    //if (drawBoard) { console.log('======================================================'); drawGrid(grid); }
     if (checkResult(grid) !== results.NONE) { break; }
   } 
 
-  if (drawBoard) { console.log('======================================================'); drawGrid(grid); }
+  if (debug) { drawGrid(grid); }
   console.log('RESULT: ' + checkResult(grid));
   player1.drawTree();
 
@@ -146,6 +142,18 @@ function runOneGame (drawBoard) {
 
 }
 
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
+runOneGame(true);
 runOneGame(true);
 runOneGame(true);
 runOneGame(true);
