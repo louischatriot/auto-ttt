@@ -159,7 +159,24 @@ for (var z = 0; z < 362880; z += 1) {
   runOneGame();
 }
 
-// Test that we now only get draws for AI vs AI: the AI learned how to play tic tac toe
+console.log(player1.decisionTree.summary());
+
+runOneGame();
+
+console.log(player1.decisionTree.summary());
+
+runOneGame();
+
+console.log(player2.decisionTree.summary());
+
+runOneGame();
+
+console.log(player2.decisionTree.summary());
+
+
+// Test that we now only get draws for AI vs AI when they are randomized: the AI learned how to play tic tac toe
+player1.randomize = true;
+player2.randomize = true;
 var dc = 0, g;
 for (var z = 0; z < 100000; z += 1) {
   g = runOneGame();

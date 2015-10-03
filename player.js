@@ -38,6 +38,11 @@ Node.prototype.nodeCount = function (score) {
 };
 
 
+Node.prototype.summary = function () {
+  return this.nodeCount() + ' nodes - U: ' + this.nodeCount(scores.UNKNOWN) + ' - W: ' + this.nodeCount(scores.WIN) + ' - L: ' + this.nodeCount(scores.LOSE) + ' - D: ' + this.nodeCount(scores.DRAW);
+};
+
+
 /*
  * Draw the tree originating from this node, with offset spaces every level
  */
@@ -60,6 +65,7 @@ Node.prototype.draw = function () {
 function Player () {
   this.decisionTree = new Node(players.ROOT);
   this.currentNode = this.decisionTree;   // No game started
+  this.randomize = false;    // By default no randoization to build decision tree faster. Can be set to true for testing and playing vs human.
 }
 
 
@@ -68,8 +74,11 @@ function Player () {
  * Returns the chosen move
  */
 Player.prototype.play = function (validMoves) {
-  var maxScore = 0, maxMove
+  var maxScore = scores.LOSE, chosenMove
+    , movesByScore = {}
     , self = this;
+
+  movesByScore[scores.LOSE] = []; movesByScore[scores.WIN] = []; movesByScore[scores.DRAW] = []; movesByScore[scores.UNKNOWN] = [];
 
   // Select best move given data collected to date
   validMoves.forEach(function (move) {
@@ -80,22 +89,27 @@ Player.prototype.play = function (validMoves) {
     } else {
       score = scores.UNKNOWN;
     }
-    
-    // Of course that means some nodes will never be explored but the AI will always play optimally
-    // The >= sign guarantees one node will always be chosen
+
+    movesByScore[score].push(move);
     if (score >= maxScore) {
       maxScore = score;
-      maxMove = move;
+      chosenMove = move;
     }
   });
 
-  // Move to the node corresponding to the chosen move, lazily create it if it doesn't exist
-  if (self.currentNode.children[maxMove] === undefined) {
-    self.currentNode.children[maxMove] = new Node(players.SELF, self.currentNode, validMoves.length - 1);
+  // Choosing one of the optimal moves at random to avoid to always play the same game which is
+  // boring for human players and bad for testing
+  if (this.randomize) {
+    chosenMove = movesByScore[maxScore][Math.floor(Math.random() * movesByScore[maxScore].length)];
   }
-  self.currentNode = self.currentNode.children[maxMove];
 
-  return maxMove;
+  // Move to the node corresponding to the chosen move, lazily create it if it doesn't exist
+  if (self.currentNode.children[chosenMove] === undefined) {
+    self.currentNode.children[chosenMove] = new Node(players.SELF, self.currentNode, validMoves.length - 1);
+  }
+  self.currentNode = self.currentNode.children[chosenMove];
+
+  return chosenMove;
 };
 
 
@@ -111,7 +125,7 @@ Player.prototype.opponentPlayed = function (move, validMoves) {
 
 
 Player.prototype.drawTree = function () {
-  console.log("===== " + this.decisionTree.nodeCount() + ' nodes - U: ' + this.decisionTree.nodeCount(scores.UNKNOWN) + ' - W: ' + this.decisionTree.nodeCount(scores.WIN) + ' - L: ' + this.decisionTree.nodeCount(scores.LOSE) + ' - D: ' + this.decisionTree.nodeCount(scores.DRAW));
+  console.log("===== " + this.decisionTree.summary());
   this.decisionTree.draw();
 };
 
